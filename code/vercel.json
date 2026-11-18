@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/bundle-interview-access.mjs && vite build",
+  "outputDirectory": "dist",
+  "regions": ["fra1"],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "github": { "silent": true },
+  "rewrites": [
+    { "source": "/(.*\\.cjs)", "destination": "/__not_found__" },
+    { "source": "/((?!assets/|icons/|favicon\\.ico|favicon-32\\.png|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), geolocation=(), microphone=(self)"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'sha256-OfXxmisWtto/zCVXVf5OH8V8tqsqzpzWi6WOqKlAt0A=' https://www.googletagmanager.com https://www.google.com https://www.google-analytics.com https://apis.google.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://www.google.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.gstatic.com https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://apis.google.com https://www.google.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.ingest.de.sentry.io; frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com https://www.google.com https://recaptcha.google.com; worker-src 'self'; manifest-src 'self'"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Каждый пользователь может читать/писать только свой документ.
+    // Проверяются только ключевые поля, неверный тип которых ломает синхронизацию или слияние данных.
+    // Allowlist всех полей намеренно не используется, чтобы добавление нового поля не ломало синхронизацию.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && !('geminiKey' in request.resource.data)
+        && (!('savedAt' in request.resource.data) || request.resource.data.savedAt is number)
+        && (!('language' in request.resource.data) || request.resource.data.language in ['lt', 'en'])
+        && (!('theme' in request.resource.data) || request.resource.data.theme in ['dark', 'light', 'colorful', 'book'])
+        && (!('themeSource' in request.resource.data) || request.resource.data.themeSource in ['system', 'manual'])
+        && (!('interfaceLang' in request.resource.data) || request.resource.data.interfaceLang in ['ru', 'uk', 'en'])
+        // Никнейм: UI режет до 15 символов, здесь 60 с запасом (size() может считать байты UTF-8, а кириллица и эмодзи — 2-4 байта на символ).
+        // Правило ловит только мусор вроде числа или огромной строки, а не повторяет лимит интерфейса.
+        && (!('nickname' in request.resource.data) || (request.resource.data.nickname is string && request.resource.data.nickname.size() <= 60));
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Тариф: клиент читает только свой документ, пишет только сервер (Admin SDK обходит правила).
+    match /entitlements/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Счётчики AI-запросов по дням (UTC) лежат под хэшем почты, а не под uid: клиент их не читает.
+    // Читает и пишет только сервер (Admin SDK обходит правила).
+    match /usage/{subject}/days/{day} {
+      allow read, write: if false;
+    }
+
+    // Список приглашённых к серверному ключу Gemini: ни чтения, ни записи с клиента.
+    // Сервер читает и пишет через Admin SDK (api/_access.js, api/admin/ai-access.js), он правила обходит.
+    match /aiAccess/{email} {
+      allow read, write: if false;
+    }
+
+    // Оплаченный доступ (examPaidUntil, constitutionPaidUntil, customerId Polar и журнал покупок): только сервер.
+    // Пишет вебхук Polar через Admin SDK (api/billing/webhook.js), читает api/_examEntitlement.js и портал в api/billing/checkout.js.
+    // Клиент срок доступа узнаёт из ответа /api/exam/*, а не из Firestore.
+    match /examAccess/{userId} {
+      allow read, write: if false;
+    }
+
+    // Обработанные заказы Polar (идемпотентность вебхука): только сервер.
+    match /billingOrders/{orderId} {
+      allow read, write: if false;
+    }
+
+    // Лидерборд пока не используется: и чтение, и запись закрыты.
+    match /leaderboard/{odcId} {
+      allow read, write: if false;
+    }
+
+    // Экзаменационный раздел: чтение и запись только владельцу аккаунта с флагом examAdmin в токене.
+    match /users/{userId}/exam/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId && request.auth.token.examAdmin == true;
+    }
+
+    // Запретить всё остальное
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
