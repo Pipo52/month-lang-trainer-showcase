@@ -27,7 +27,7 @@ The files live under `code/`, with the same paths as in the private project. [`F
 - `code/api/_billing.js` — Polar checkout and webhook helpers: one-time purchases, two independent entitlements, idempotent grant replay, refunds, and paid-until dates in the Vilnius time zone. Product IDs and secrets come from server environment variables.
 - `code/api/_billing.test.ts` — Tests for those helpers, including webhook HMAC verification and checkout plan resolution.
 - `code/api/_security.js` — Firebase ID-token checks for AI and billing endpoints, App Check, a pre-auth IP limiter, and separate guest and signed-in quotas. The Firebase web API key in this copy is a placeholder.
-- `code/firestore.rules` — A signed-in user may read or write only their own `users/{uid}` document (with type checks and a ban on storing `geminiKey`). `examAccess` and `billingOrders` are written by the server and readable only by the owner.
+- `code/firestore.rules` — A signed-in user may read or write only their own `users/{uid}` document (with type checks and a ban on storing `geminiKey`). `examAccess` and `billingOrders` are read and written only by the server. The client learns access status from the exam API, not from Firestore.
 - `code/src/data/lt/constitution/constitutionAccess.ts` and `code/src/data/lt/exam/interviewAccess.ts` — Server-side helpers that mark some material as free and some as paid. They do not contain chapter, question or answer text.
 - `code/src/exam/useAccessStatus.ts` — React hook that loads access status, handles the return from Polar, and polls for a short time after checkout.
 
@@ -55,7 +55,7 @@ The files live under `code/`, with the same paths as in the private project. [`F
 
 ## Testing
 
-These counts are from the private main project, not from this showcase alone: **1,354 unit tests** and **110 Playwright end-to-end tests** (plus one skipped test).
+These counts are from the private main project, not from this showcase alone: **1,377 unit tests** and **120 Playwright end-to-end tests** (plus one skipped test).
 
 ## Licence
 
